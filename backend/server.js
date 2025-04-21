@@ -19,11 +19,7 @@ if (!mongoURI) {
     process.exit(1); // Exit if DB connection string is missing
 }
 
-mongoose.connect(mongoURI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    // Mongoose 6+ doesn't require useCreateIndex or useFindAndModify
-})
+mongoose.connect(mongoURI)
 .then(() => console.log('MongoDB Connected...'))
 .catch(err => {
     console.error("MongoDB Connection Error:", err);

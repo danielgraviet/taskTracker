@@ -22,7 +22,7 @@ const TaskSchema = new Schema({
         type: String,
         required: [true, 'Category is required'],
         trim: true,
-        enum: ['Meeting', 'Coding', 'Research', 'Documentation', 'Planning', 'Other'] // Example categories - customize as needed!
+        enum: ['SEO', 'Engineering', 'Writing', 'Frontend', 'Data Analysis', 'Other'] // Example categories - customize as needed!
     },
     // Optional: Add status, priority, due date etc. later if needed
     // status: { type: String, enum: ['Todo', 'In Progress', 'Done'], default: 'Todo' },
