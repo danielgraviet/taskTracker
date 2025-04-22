@@ -20,7 +20,7 @@ const resetBtn = document.getElementById('reset-btn');
 
 // --- Configuration ---
 // !!! IMPORTANT: Change this URL to where your backend API is running !!!
-const API_URL = 'http://localhost:5001/api/tasks'; // Default backend port is 5000 or 5001
+const API_URL = 'https://tasktrackerbackend-2xhi.onrender.com/api/tasks'; // Default backend port is 5000 or 5001
 
 
 // --- Utility Functions ---
