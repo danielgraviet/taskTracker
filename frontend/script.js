@@ -28,7 +28,7 @@ const pageInfoSpan = document.getElementById("page-info");
 // !!! IMPORTANT: Change this URL to where your backend API is running !!!
 const API_URL = 'https://tasktrackerbackend-2xhi.onrender.com/api/tasks'; // Default backend port is 5000 or 5001
 const LOCAL_API_URL = 'http://localhost:5001/api/tasks';
-const localDevelopment = true; // change this flag when needed
+const localDevelopment = false; // change this flag when needed
 
 const API_TO_USE = localDevelopment ? LOCAL_API_URL : API_URL;
 
