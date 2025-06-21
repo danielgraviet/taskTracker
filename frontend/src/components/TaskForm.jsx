@@ -32,11 +32,9 @@ const TaskForm = ({ onSaveTask, editingTask, onCancelEdit }) => {
       description,
       category,
     };
-    console.log('Task Data Submitted:', taskData); // For now, just log it
-    // onSaveTask(taskData); // We'll uncomment and implement this later
+    console.log('Task Data Submitted:', taskData); 
+    onSaveTask(taskData); 
 
-    // Reset form fields after submission (for new tasks)
-    // If editing, we might not want to reset immediately. This will be refined.
     setDate('');
     setCompany('');
     setDescription('');
