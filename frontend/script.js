@@ -17,10 +17,25 @@ const sortOrderSelect = document.getElementById('sort-order');
 const filterSortBtn = document.getElementById('filter-sort-btn');
 const resetBtn = document.getElementById('reset-btn');
 
+// pagination dom elements
+const paginationControlsDiv = document.getElementById("pagination-controls");
+const prevPageBtn = document.getElementById("prev-page-btn");
+const nextPageBtn = document.getElementById("next-page-btn");
+const pageInfoSpan = document.getElementById("page-info");
+
 
 // --- Configuration ---
 // !!! IMPORTANT: Change this URL to where your backend API is running !!!
 const API_URL = 'https://tasktrackerbackend-2xhi.onrender.com/api/tasks'; // Default backend port is 5000 or 5001
+const LOCAL_API_URL = 'http://localhost:5001/api/tasks';
+const localDevelopment = true; // change this flag when needed
+
+const API_TO_USE = localDevelopment ? LOCAL_API_URL : API_URL;
+
+let currentPage = 1;
+let totalPages = 1;
+let currentFiltersAndSort = {};
+const ITEMS_PER_PAGE = 10;
 
 
 // --- Utility Functions ---
@@ -51,15 +66,22 @@ function formatDateForInput(isoDateString) {
 // --- Core API Interaction & UI Functions ---
 
 // Fetch tasks from API and display them in the list
-async function fetchAndDisplayTasks(params = {}) {
+async function fetchAndDisplayTasks(params = {}, pageToFetch = 1) {
     taskListDiv.innerHTML = 'Loading tasks...'; // Show loading indicator
-    let url = API_URL;
+    let url = API_TO_USE;
+
+    currentFiltersAndSort = { ...params };
+    const queryParams = {
+        ...params,
+        page: pageToFetch,
+        limit: ITEMS_PER_PAGE // Uses the constant ITEMS_PER_PAGE
+    };
 
     try {
         // Construct query string from params object if it's not empty
-        const queryString = new URLSearchParams(params).toString();
+        const queryString = new URLSearchParams(queryParams).toString();
         if (queryString) {
-            url = `${API_URL}?${queryString}`;
+            url = `${API_TO_USE}?${queryString}`;
         }
 
         console.log("Fetching tasks from:", url); // Log the URL being fetched
@@ -76,14 +98,20 @@ async function fetchAndDisplayTasks(params = {}) {
             }
             throw new Error(errorMsg);
         }
-        const tasks = await response.json();
 
-        taskListDiv.innerHTML = ''; // Clear previous list/loading message
+        const paginatedResponse = await response.json();
 
-        if (!Array.isArray(tasks)) {
-             throw new Error("Invalid response format: Expected an array of tasks.");
+        if (!paginatedResponse || typeof paginatedResponse !== 'object' || !Array.isArray(paginatedResponse.tasks) ||
+            typeof paginatedResponse.currentPage !== 'number' || typeof paginatedResponse.totalPages !== 'number' || typeof paginatedResponse.totalItems !== 'number') {
+            console.error("Invalid paginated response structure:", paginatedResponse);
+            throw new Error("Invalid response format from server. Expected paginated data with 'tasks', 'currentPage', 'totalPages', 'totalItems'.");
         }
 
+        const { tasks, currentPage: backendCurrentPage, totalPages: backendTotalPages, totalItems } = paginatedResponse;
+
+        taskListDiv.innerHTML = '';
+        currentPage = backendCurrentPage;
+        totalPages = backendTotalPages;
 
         if (tasks.length === 0) {
             taskListDiv.innerHTML = '<p>No tasks found matching your criteria.</p>';
@@ -109,10 +137,39 @@ async function fetchAndDisplayTasks(params = {}) {
             `;
             taskListDiv.appendChild(taskElement);
         });
+
+        updatePaginationControls(currentPage, totalPages, totalItems);
+        if (paginationControlsDiv && totalItems > 0) {
+            paginationControlsDiv.style.display = 'flex';
+        } else if (paginationControlsDiv) {
+            paginationControlsDiv.style.display = 'none';
+        }
     } catch (error) {
         console.error('Error fetching or displaying tasks:', error);
         taskListDiv.innerHTML = `<p style="color: red;">Error loading tasks: ${error.message}. Please ensure the backend server is running and the API URL is correct.</p>`;
     }
+}
+
+function updatePaginationControls(page, totalPgs, totalItms) {
+    // console.log('updatePaginationControls called with - page:', page, 'totalPgs:', totalPgs, 'totalItms:', totalItms);
+    if (!pageInfoSpan || !prevPageBtn || !nextPageBtn || !paginationControlsDiv) {
+        // console.error('Pagination DOM elements not all found!');
+        return;
+    }
+
+    if (totalItms === 0) {
+        // console.log('updatePaginationControls: totalItms is 0, hiding controls.');
+        pageInfoSpan.textContent = 'No tasks';
+        prevPageBtn.disabled = true;
+        nextPageBtn.disabled = true;
+        paginationControlsDiv.style.display = 'none';
+        return;
+    }
+    // console.log('updatePaginationControls: totalItms > 0, attempting to show controls.');
+    // paginationControlsDiv.style.display = 'flex'; // Handled in fetchAndDisplayTasks
+    pageInfoSpan.textContent = `Page ${page} of ${totalPgs} (${totalItms} items)`;
+    prevPageBtn.disabled = page <= 1;
+    nextPageBtn.disabled = page >= totalPgs;
 }
 
 // Handle form submission for creating or updating tasks
@@ -136,7 +193,7 @@ async function handleFormSubmit(event) {
 
     const taskId = taskIdInput.value; // Get ID from hidden field (if editing)
     const method = taskId ? 'PUT' : 'POST';
-    const url = taskId ? `${API_URL}/${taskId}` : API_URL;
+    const url = taskId ? `${API_TO_USE}/${taskId}` : API_TO_USE;
 
     console.log(`Sending ${method} request to ${url} with data:`, taskData);
 
@@ -172,7 +229,7 @@ async function handleFormSubmit(event) {
         // console.log('Task saved/updated successfully:', result);
 
         clearForm(); // Clear the form fields
-        await fetchAndDisplayTasks(); // Refresh the task list (await to ensure it finishes)
+        await fetchAndDisplayTasks({}, 1); // Refresh the task list (await to ensure it finishes)
         alert(`Task successfully ${taskId ? 'updated' : 'added'}!`); // User feedback
 
 
@@ -187,7 +244,7 @@ async function handleFormSubmit(event) {
 async function editTask(id) {
     console.log('Attempting to edit task ID:', id);
     try {
-        const response = await fetch(`${API_URL}/${id}`);
+        const response = await fetch(`${API_TO_USE}/${id}`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -220,7 +277,7 @@ async function deleteTask(id) {
 
     console.log('Attempting to delete task ID:', id);
     try {
-        const response = await fetch(`${API_URL}/${id}`, {
+        const response = await fetch(`${API_TO_USE}/${id}`, {
             method: 'DELETE',
         });
 
@@ -237,7 +294,10 @@ async function deleteTask(id) {
         // console.log(result.msg);
 
         alert('Task deleted successfully!'); // User feedback
-        await fetchAndDisplayTasks(); // Refresh the task list to show the task removed
+        const pageToFetchAfterDelete = (taskListDiv.querySelectorAll('.task-item').length === 1 && currentPage > 1)
+                            ? currentPage - 1
+                            : currentPage;
+        await fetchAndDisplayTasks(currentFiltersAndSort, pageToFetchAfterDelete);
 
     } catch (error) {
         console.error('Error deleting task:', error);
@@ -277,7 +337,7 @@ function applyFiltersAndSort() {
     // if (categoryFilterSelect.value) { params.category = categoryFilterSelect.value; }
 
     console.log('Applying filters/sort with params:', params);
-    fetchAndDisplayTasks(params);
+    fetchAndDisplayTasks(params, 1);
 }
 
 // Reset all filters and sorting to default and refresh list
@@ -287,7 +347,7 @@ function resetFiltersAndSort() {
      sortOrderSelect.value = 'desc';// Reset sort order to default
      // Reset any other filter inputs here
      console.log('Resetting filters and sorting.');
-     fetchAndDisplayTasks(); // Fetch with default settings (no params)
+     fetchAndDisplayTasks({}, 1); // Fetch with default settings (no params)
 }
 
 // Basic HTML escaping function to prevent XSS
@@ -324,8 +384,29 @@ document.addEventListener('DOMContentLoaded', () => {
         resetBtn.addEventListener('click', resetFiltersAndSort);
     } else { console.error("Reset button not found!"); }
 
+    // pagination
+    if (prevPageBtn) {
+        prevPageBtn.addEventListener('click', () => {
+            if (currentPage > 1) {
+                // Call fetchAndDisplayTasks with the previous page number
+                // and the currently active filters/sort options
+                fetchAndDisplayTasks(currentFiltersAndSort, currentPage - 1);
+            }
+        });
+    } else { console.error("Previous page button not found!"); }
+
+    if (nextPageBtn) {
+        nextPageBtn.addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                // Call fetchAndDisplayTasks with the next page number
+                // and the currently active filters/sort options
+                fetchAndDisplayTasks(currentFiltersAndSort, currentPage + 1);
+            }
+        });
+    } else { console.error("Next page button not found!"); }
+
     // --- Initial Data Load ---
-    fetchAndDisplayTasks(); // Load tasks when the page is ready
+    fetchAndDisplayTasks({}, 1); // Load tasks when the page is ready
 });
 
 // Make editTask and deleteTask globally accessible so onclick handlers in HTML can find them

@@ -1,77 +1,96 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Internship Task Tracker</title>
-    <link rel="stylesheet" href="styles.css"> <!-- Link to your CSS file -->
-</head>
-<body>
+    <link rel="stylesheet" href="styles.css" />
+    <!-- Link to your CSS file -->
+  </head>
+  <body>
     <h1>Internship Task Tracker</h1>
 
     <!-- Task Input Form -->
     <form id="task-form">
-        <h2>Add/Edit Task</h2>
-        <input type="hidden" id="task-id"> <!-- Hidden field for editing -->
-        <div>
-            <label for="date">Date:</label>
-            <!-- Using type="date" gives a date picker -->
-            <input type="date" id="date" required>
-        </div>
-        <div>
-            <label for="company">Company:</label>
-            <input type="text" id="company" placeholder="Company Name" required>
-        </div>
-        <div>
-            <label for="description">Description:</label>
-            <textarea id="description" placeholder="Describe the task" required></textarea>
-        </div>
-        <div>
-            <label for="category">Category:</label>
-            <select id="category" required>
-                <option value="">-- Select Category --</option>
-                <!-- Make sure these values EXACTLY match your backend model enum -->
-                <option value="SEO">SEO</option>
-                <option value="Engineering">Engineering</option>
-                <option value="Data Analysis">Data Analysis</option>
-                <option value="Frontend">Frontend</option>
-                <option value="Writing">Writing</option>
-                <option value="Other">Other</option>
-            </select>
-        </div>
-        <button type="submit">Save Task</button>
-        <button type="button" id="cancel-edit" style="display: none;">Cancel Edit</button>
+      <h2>Add/Edit Task</h2>
+      <input type="hidden" id="task-id" />
+      <!-- Hidden field for editing -->
+      <div>
+        <label for="date">Date:</label>
+        <!-- Using type="date" gives a date picker -->
+        <input type="date" id="date" required />
+      </div>
+      <div>
+        <label for="company">Company:</label>
+        <input type="text" id="company" placeholder="Company Name" required />
+      </div>
+      <div>
+        <label for="description">Description:</label>
+        <textarea
+          id="description"
+          placeholder="Describe the task"
+          required
+        ></textarea>
+      </div>
+      <div>
+        <label for="category">Category:</label>
+        <select id="category" required>
+          <option value="">-- Select Category --</option>
+          <!-- Make sure these values EXACTLY match your backend model enum -->
+          <option value="SEO">SEO</option>
+          <option value="Engineering">Engineering</option>
+          <option value="Data Analysis">Data Analysis</option>
+          <option value="Frontend">Frontend</option>
+          <option value="Writing">Writing</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <button type="submit">Save Task</button>
+      <button type="button" id="cancel-edit" style="display: none">
+        Cancel Edit
+      </button>
     </form>
 
-    <hr>
+    <hr />
 
     <!-- Search and Sort Controls -->
     <div id="controls">
-        <input type="text" id="search-input" placeholder="Search tasks...">
-        <select id="sort-by">
-             <option value="date">Sort by Date</option>
-             <option value="company">Sort by Company</option>
-             <option value="category">Sort by Category</option>
-        </select>
-        <select id="sort-order">
-             <option value="desc">Descending</option>
-             <option value="asc">Ascending</option>
-        </select>
-        <button id="filter-sort-btn">Apply Filters/Sort</button>
-        <button id="reset-btn">Reset</button>
+      <input type="text" id="search-input" placeholder="Search tasks..." />
+      <select id="sort-by">
+        <option value="date">Sort by Date</option>
+        <option value="company">Sort by Company</option>
+        <option value="category">Sort by Category</option>
+      </select>
+      <select id="sort-order">
+        <option value="desc">Descending</option>
+        <option value="asc">Ascending</option>
+      </select>
+      <button id="filter-sort-btn">Apply Filters/Sort</button>
+      <button id="reset-btn">Reset</button>
     </div>
 
-    <hr>
+    <hr />
 
     <!-- Task List -->
     <h2>Tasks</h2>
     <div id="task-list">
-        <!-- Tasks will be loaded here by JavaScript -->
-        Loading tasks...
+      <!-- Tasks will be loaded here by JavaScript -->
+      Loading tasks...
+    </div>
+
+    <!-- Pagination Controls -->
+    <!-- This is correctly placed, typically after the list it controls -->
+    <div
+    id="pagination-controls"
+    class="pagination-controls"
+    >
+      <button id="prev-page-btn" >« Previous</button>
+      <span id="page-info">Page 1 of 1</span>
+      <button id="next-page-btn" >Next »</button>
     </div>
 
     <!-- Link to your JavaScript file -->
     <!-- Place it at the end of body so HTML elements exist when script runs -->
     <script src="script.js"></script>
-</body>
+  </body>
 </html>

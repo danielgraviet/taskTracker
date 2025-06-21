@@ -7,7 +7,6 @@ const Task = require('../models/task'); // Import the Task model
 
 // CREATE: Add a new task (POST /api/tasks)
 router.post('/', async (req, res) => {
-    // Basic validation (can be enhanced)
     const { date, company, description, category } = req.body;
     if (!company || !description || !category) {
         return res.status(400).json({ msg: 'Please include company, description, and category' });
@@ -32,13 +31,21 @@ router.post('/', async (req, res) => {
     }
 });
 
-// READ: Get all tasks (GET /api/tasks)
-// Add Query Params for Search & Sort:
-// /api/tasks?search=Meeting -> Search description/company/category
-// /api/tasks?sortBy=date&order=desc -> Sort by date descending
 router.get('/', async (req, res) => {
     try {
-        const { search, sortBy, order, category: categoryFilter, company: companyFilter } = req.query;
+        const {
+            search,
+            sortBy,
+            order,
+            category: categoryFilter,
+            company: companyFilter,
+            page: pageQuery, // gets page and limit from query
+            limit: limitQuery
+        } = req.query;
+
+        const page = parseInt(pageQuery) || 1;
+        const limit = parseInt(limitQuery) || 10;
+        const skip = (page - 1) * limit; // figure out what this is. 
 
         let query = {}; // Mongoose query object
         let sortOptions = {}; // Mongoose sort options
@@ -69,9 +76,23 @@ router.get('/', async (req, res) => {
              sortOptions.date = -1; // Default sort by date descending
         }
 
+        const [tasks, totalItems] = await Promise.all([
+            Task.find(query)
+                .sort(sortOptions)
+                .skip(skip)
+                .limit(limit)
+                .exec(),
+            Task.countDocuments(query).exec()
+        ]);
 
-        const tasks = await Task.find(query).sort(sortOptions);
-        res.json(tasks);
+        const totalPages = Math.ceil(totalItems / limit);
+
+        res.json({
+            tasks,
+            currentPage: page,
+            totalPages,
+            totalItems,
+        });
     } catch (err) {
         console.error("Error fetching tasks:", err.message);
         res.status(500).send('Server Error');
