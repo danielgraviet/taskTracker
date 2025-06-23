@@ -8,8 +8,7 @@ import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import TaskForm from "./components/TaskForm";
 import TaskList from "./components/TaskList";
-// We'll create these next
-// import TaskList from './components/TaskList';
+import axios from "axios";
 import { v4 as uuidv4 } from "uuid"; // For generating unique IDs
 
 const theme = createTheme({
@@ -23,9 +22,36 @@ const theme = createTheme({
   },
 });
 
+const API_BASE_URL = "/api/tasks"
+
 function App() {
   const [tasks, setTasks] = useState([]); // State to hold the list of tasks
   const [editingTask, setEditingTask] = useState(null); // For edit functionality later
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    const fetchTasks = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await axios.get(API_BASE_URL);
+        const fetchedTasks = response.data.tasks.map(task => ({
+          ...task,
+          id: task._id // Map MongoDB _id to id
+        }));
+        setTasks(fetchedTasks);
+      } catch (err) {
+        console.error("Error fetching tasks:", err);
+        setError("Failed to load tasks. Please ensure the backend is running.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTasks();
+  }, []); // Empty dependency array: runs once on mount
+
+  console.log("tasks: ", tasks);
 
   // --- Mock data loading and saving to localStorage (for persistence across reloads) ---
   // Load tasks from localStorage when the component mounts
