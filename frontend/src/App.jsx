@@ -9,7 +9,6 @@ import Box from "@mui/material/Box";
 import TaskForm from "./components/TaskForm";
 import TaskList from "./components/TaskList";
 import axios from "axios";
-import { v4 as uuidv4 } from "uuid"; // For generating unique IDs
 
 const theme = createTheme({
   // ... (your theme definition)
@@ -22,13 +21,13 @@ const theme = createTheme({
   },
 });
 
-const API_BASE_URL = "/api/tasks"
+const API_BASE_URL = "/api/tasks";
 
 function App() {
   const [tasks, setTasks] = useState([]); // State to hold the list of tasks
   const [editingTask, setEditingTask] = useState(null); // For edit functionality later
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -36,9 +35,9 @@ function App() {
       setError(null);
       try {
         const response = await axios.get(API_BASE_URL);
-        const fetchedTasks = response.data.tasks.map(task => ({
+        const fetchedTasks = response.data.tasks.map((task) => ({
           ...task,
-          id: task._id // Map MongoDB _id to id
+          id: task._id, // Map MongoDB _id to id
         }));
         setTasks(fetchedTasks);
       } catch (err) {
@@ -51,34 +50,33 @@ function App() {
     fetchTasks();
   }, []); // Empty dependency array: runs once on mount
 
-  console.log("tasks: ", tasks);
-
-  // --- Mock data loading and saving to localStorage (for persistence across reloads) ---
-  // Load tasks from localStorage when the component mounts
-  useEffect(() => {
-    const storedTasks = localStorage.getItem("tasks");
-    if (storedTasks) {
-      setTasks(JSON.parse(storedTasks));
-    }
-  }, []); // Empty dependency array means this runs once on mount
-
-  // Save tasks to localStorage whenever the tasks state changes
-  useEffect(() => {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-  }, [tasks]); // Runs whenever 'tasks' changes
-  // --- End localStorage mock ---
-
-  const handleSaveTask = (taskData) => {
+  const handleSaveTask = async (taskData) => {
     if (editingTask) {
       // Logic for updating an existing task (we'll implement this later)
       console.log("Updating task:", taskData);
       // setTasks(tasks.map(task => task.id === editingTask.id ? { ...task, ...taskData } : task));
       // setEditingTask(null);
     } else {
-      // Logic for adding a new task
-      const newTask = { ...taskData, id: uuidv4() }; // Add a unique ID
-      setTasks((prevTasks) => [newTask, ...prevTasks]); // Add to the beginning of the list
-      console.log("New task added:", newTask);
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await axios.post(API_BASE_URL, taskData);
+        const newTaskFromBackend = response.data;
+        const newTaskForState = {
+          ...newTaskFromBackend,
+          id: newTaskFromBackend._id,
+        };
+        setTasks((prevTasks) => [newTaskForState, ...prevTasks]);
+        console.log("New task added:", newTaskForState);
+      } catch (err) {
+        console.error(
+          "Error adding task:",
+          err.response ? err.response.data : err.message
+        );
+        setError(err.response?.data?.msg || "Failed to add task.");
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -88,9 +86,25 @@ function App() {
     // We'll populate the form with this task's data later
   };
 
-  const handleDeleteTask = (taskId) => {
-    console.log("Deleting task in App, ID:", taskId);
-    // setTasks(tasks.filter(task => task.id !== taskId));
+  const handleDeleteTask = async (taskId) => {
+    if (!window.confirm("Are you sure you want to delete this task?")) {
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      await axios.delete(`${API_BASE_URL}/${taskId}`);
+      setTasks(tasks.filter((task) => task.id !== taskId));
+      console.log("Task deleted, ID:", taskId);
+    } catch (err) {
+      console.error(
+        "Error deleting task:",
+        err.response ? err.response.data : err.message
+      );
+      setError(err.response?.data?.msg || "Failed to delete task.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -113,8 +127,8 @@ function App() {
           </Typography>
           <TaskList
             tasks={tasks}
-            onEditTask={handleEditTask} // Pass the handler
-            onDeleteTask={handleDeleteTask} // Pass the handler
+            onEditTask={handleEditTask}
+            onDeleteTask={handleDeleteTask} 
           />
         </Box>
       </Container>
