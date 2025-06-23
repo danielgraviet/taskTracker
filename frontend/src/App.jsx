@@ -52,10 +52,31 @@ function App() {
 
   const handleSaveTask = async (taskData) => {
     if (editingTask) {
-      // Logic for updating an existing task (we'll implement this later)
-      console.log("Updating task:", taskData);
-      // setTasks(tasks.map(task => task.id === editingTask.id ? { ...task, ...taskData } : task));
-      // setEditingTask(null);
+      try {
+        // 'editingTask.id' is the MongoDB '_id'
+        const response = await axios.put(`${API_BASE_URL}/${editingTask.id}`, taskData);
+        const updatedTaskFromBackend = response.data;
+        const updatedTaskForState = {
+          ...updatedTaskFromBackend,
+          id: updatedTaskFromBackend._id
+        };
+
+        setTasks(tasks.map(task =>
+          task.id === editingTask.id ? updatedTaskForState : task
+        ));
+        setEditingTask(null); 
+        console.log("Task updated:", updatedTaskForState);
+      } catch (err) {
+        console.error("Error updating task:", err.response ? err.response.data : err.message);
+        if (err.response && err.response.data && err.response.data.errors) {
+            const errorMessages = Object.values(err.response.data.errors).map(e => e.message).join(', ');
+            setError(`Validation Error: ${errorMessages}`);
+        } else {
+            setError(err.response?.data?.msg || "Failed to update task.");
+        }
+      } finally {
+        setLoading(false);
+      }
     } else {
       setLoading(true);
       setError(null);
@@ -82,8 +103,13 @@ function App() {
 
   const handleEditTask = (task) => {
     console.log("Editing task in App:", task);
-    // setEditingTask(task);
-    // We'll populate the form with this task's data later
+    setError(null);
+    setEditingTask(task);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTask(null);
+    setError(null); 
   };
 
   const handleDeleteTask = async (taskId) => {
@@ -118,8 +144,8 @@ function App() {
 
           <TaskForm
             onSaveTask={handleSaveTask}
-            // editingTask={editingTask} // Pass editingTask later
-            // onCancelEdit={() => setEditingTask(null)} // Pass cancel later
+            editingTask={editingTask} // Pass editingTask later
+            onCancelEdit={() => setEditingTask(null)} // Pass cancel later
           />
 
           <Typography variant="h2" component="h2" sx={{ mt: 5, mb: 2 }}>
@@ -128,6 +154,7 @@ function App() {
           <TaskList
             tasks={tasks}
             onEditTask={handleEditTask}
+            onCancelEdit={handleCancelEdit}
             onDeleteTask={handleDeleteTask} 
           />
         </Box>
