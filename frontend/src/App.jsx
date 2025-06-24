@@ -22,7 +22,7 @@ const theme = createTheme({
   },
 });
 
-const API_BASE_URL = "/api/tasks";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 const ITEMS_PER_PAGE = 5;
 
 function App() {
