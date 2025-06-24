@@ -6,28 +6,30 @@ import CardContent from '@mui/material/CardContent';
 import CardActions from '@mui/material/CardActions';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import Box from '@mui/material/Box'; // For layout if needed
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 const TaskItem = ({ task, onEdit, onDelete }) => {
   // Helper to format date if it's just YYYY-MM-DD
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    // Assuming dateString is 'YYYY-MM-DD'
-    // For more robust parsing, consider a library like date-fns or dayjs
-    try {
-        const dateObj = new Date(dateString + 'T00:00:00'); // Ensure it's treated as local date
-        if (isNaN(dateObj.getTime())) return 'Invalid Date';
-        return dateObj.toLocaleDateString(undefined, { // undefined for user's locale
+    if (!dateString || typeof dateString != 'string') return 'N/A';
+    const dateParts = dateString.split("-");
+    if (dateParts.length === 3) {
+      const year = parseInt(dateParts[0], 10);
+      const month = parseInt(dateParts[1], 10) - 1; // JS months are 0-indexed
+      const day = parseInt(dateParts[2], 10);
+  
+      if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+        const dateObj = new Date(year, month, day); // This creates a date in the local timezone
+        if (!isNaN(dateObj.getTime())) {
+          return dateObj.toLocaleDateString(undefined, {
             year: 'numeric',
             month: 'long',
             day: 'numeric',
-        });
-    } catch (e) {
-        return dateString; // Fallback if parsing fails
-    }
-  };
+          });
+        }
+      }
+  }};
 
 
   return (
